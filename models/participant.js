@@ -4,6 +4,7 @@
  * Time: 08:45
  */
 fs = require('fs');
+//var mongoose = require('mongoose');
 
 module.exports = function (mongoose) {
     var Schema = mongoose.Schema;
@@ -43,7 +44,12 @@ module.exports = function (mongoose) {
         return pict_url;
     });
 
-    this.model = mongoose.model('Participant', Participant);
+    Participant.methods.equals = function(otherParticipant){
+        console.log("Participant.equals");
+        return (this.id == otherParticipant.id);
+    }
 
-    return this;
+    Participant.model = mongoose.model('Participant', Participant);
+
+    return Participant;
 };
