@@ -10,10 +10,6 @@ url = require('url');
 
 module.exports = function (app, models) {
 
-    app.get('/api', function (req, res) {
-        res.send('App is running');
-    });
-
     app.get('/api/participant', function (request, response) {
 
         var url_parts = url.parse(request.url, true);
