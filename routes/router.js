@@ -1,9 +1,11 @@
-module.exports = function (app, models) {
+module.exports = function(app)
+{
 
-    app.get('/api', function (req, res) {
+	require('./tournamentRouter')(app);
+
+	app.get('/api/', function (req, res) {
         res.send('App is running');
     });
+}
 
-    require('./tournaments.js')(app, models);
-    require('./participants.js')(app, models);
-};
+

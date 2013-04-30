@@ -8,9 +8,9 @@ mongoose			= require('mongoose');
 
 ParticipantsSchema 	= require('./participant')(mongoose);
 RankingSchema 		= require('./ranking')(mongoose);
-RoundSchema 		= require('./round')(mongoose);
+RoundSchema 		= require('./round');
 
- module.exports = function (mongoose) {
+ //module.exports = function (mongoose) {
 	//var ParticipantsSchema = require('./participant')(mongoose);
 
  	var Schema = mongoose.Schema;
@@ -24,24 +24,44 @@ RoundSchema 		= require('./round')(mongoose);
         rounds			: [ RoundSchema ]
     });
 
+    /*
+    * returns false when tournament already started
+    */
     Tournament.methods.start = function(){
+        if( this.rounds.length == 0 ){
+            console.log('Starting Tournament: ' + this);
+            //console.log('Tournament.participants: ' + Helper.shuffleArray(this.participants.slice()));
+            var numberOfPlayers = this.participants.length; //min: 4
+            
+            var numberOfPairingsPerRound = Math.floor(numberOfPlayers / 4); //, but maximum number of Tables
+            var numberOfTeamsPerRound = numberOfPairingsPerRound * 2; 
 
-        console.log('Starting Tournament: ' + this);
-        //console.log('Tournament.participants: ' + Helper.shuffleArray(this.participants.slice()));
-        var numberOfPlayers = this.participants.length;
-        var numberOfPairingsPerRound = Math.floor(numberOfPlayers / 4);
-        var numberOfTeamsPerRound = numberOfPairingsPerRound * 2; 
+            var participantsShuffled = this.participants.slice();
+            Helper.shuffleArray(participantsShuffled);
+            var poolOfPlayers = participantsShuffled.slice(0, numberOfTeamsPerRound*2);
 
-        Helper.shuffleArray(this.participants.slice());
-        var poolOfPlayers = this.participants.slice(0, numberOfTeamsPerRound*2);
+            var firstRound = new RoundSchema.model();
 
-        var firstRound = new RoundSchema.model();
-        firstRound.createPairings(numberOfPairingsPerRound, poolOfPlayers);
-        console.log("firstRound: " + firstRound);
-        this.rounds.addToSet(firstRound);
+            firstRound.createPairings(numberOfPairingsPerRound, poolOfPlayers);
+            firstRound.calculateRanking();
+            console.log("firstRound: " + firstRound);
+            this.rounds.addToSet(firstRound);
+
+            return this;  
+            } else {
+                return false;
+            }  
     };
 
-    Tournament.model = mongoose.model('Tournament', Tournament);
+    Tournament.methods.nextRound = function (previousRound) {
+        //Extract players that MUST play in one pool
+        //Extract players that have not played in other pool
+        //Extract all other players in other pool
 
-    return Tournament;
- };
+        
+    }
+
+    exports.model = mongoose.model('Tournament', Tournament);
+
+    //return Tournament;
+ //};

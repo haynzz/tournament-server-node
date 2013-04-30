@@ -7,6 +7,8 @@ url = require('url');
 
 module.exports = function (app, models) {
 
+    var tournamentController = require('../controllers/tournamentController');
+
     app.get('/api/tournament', function (request, response) {
 
         var url_parts = url.parse(request.url, true);
@@ -58,6 +60,8 @@ module.exports = function (app, models) {
         });
 
     });
+
+
 
     app.get('/api/tournament/:id', function (req, res) {
         return models.tournament.findById(req.params.id, function (err, tournament) {
@@ -153,37 +157,65 @@ module.exports = function (app, models) {
         });
     });
 
-    app.get('/api/tournament/:id/start', function(req, res) {
+    //should be a PUT or POST
+    app.put('/api/tournament/:id/start', function(req, res) {
         
         console.log("START tournament: " + req.params.id + ": ");
-        console.log(req.body);
+        console.log("req.body: " + req.body);
         models.tournament.findById(req.params.id, function (err, tournament) {
-            tournament.start();
-            return tournament.save(function (err) {
-                if (!err) {
-                    console.log("tournament " + req.params.id + " updated");
-                    return res.send(tournament);
-                } else {
-                    console.log(err);
-                    return res.send("cannot update tournament: " + req.params.id, null, 400);
+            if(!err){
+                if(!tournament.start()){
+                    console.log("Tournament " + tournament.id + " is already started.");
+                    return res.send("Tournament " + tournament.id + " is already started.");
                 }
-            });
+                return tournament.save(function (err, tournament){
+                    if(!err){
+                        console.log("Tournament" + tournament.id + " started and saved.");
+                        return res.send(tournament);
+                    } else {
+                        console.log(err);
+                        return res.send("Error while saving tournament: " + req.params.id, null, 400);
+                    }
+
+                }); 
+            } else {
+                console.log(err);
+                return res.send("Cannot find tournament with id: " + req.params.id);
+            } 
         });
 
     });
 
-    app.get('/api/tournament/:id/emptyStart', function(req, res) {
+    app.put('/api/tournament/:id/clearRounds', function(req, res) {
         
         console.log("START tournament: " + req.params.id + ": ");
-        console.log(req.body);
+        console.log("req.body: " + req.body);
         models.tournament.findById(req.params.id, function (err, tournament) {
+            
+            /*
+            while (tournament.rounds.length != 0)
+            {
+              console.log('Removing round ' + tournament.rounds[0]._id + ' from tournament');
+                tournament.rounds[0].remove(function (err, round){
+                    if(err) {
+                        console.log('Error: ');
+                        console.log(err);
+                    }
+                    console.log('Removed round from tournament');
+                });
+                //might need to save after each remove referring to internet research results  
+            }
+            */
             tournament.rounds = [];
-            tournament.start();
-            return tournament.save(function (err) {
+            console.log('Emptied rounds from tournament');
+
+            //asynchron call (or see above)
+            tournament.save(function(err, tournament){
                 if (!err) {
-                    console.log("tournament " + req.params.id + " updated");
+                    console.log("tournament " + req.params.id + " saved after emptying rounds");
                     return res.send(tournament);
                 } else {
+                    console.log("Erorr while saving after emptying rounds: ");
                     console.log(err);
                     return res.send("cannot update tournament: " + req.params.id, null, 400);
                 }
@@ -192,4 +224,47 @@ module.exports = function (app, models) {
 
     });
 
+    app.get('/api/tournament/:id/round', function(req, res) {
+        
+        return models.tournament.findById(req.params.id, function (err, tournament) {
+            if (tournament != null) {
+                var page = {};
+                page.rounds = tournament.rounds;
+                return res.send(page);
+            } else {
+                console.log("Cannot find any tournament with id: " + req.params.id);
+                return res.send("Cannot find any tournament with id: " + req.params.id, null, 404);
+            }
+        });
+    });
+
+    app.all('/api/tournament/:id/round/:roundid/*', function(req, res) {
+        
+        return models.tournament.findById(req.params.id, function (err, tournament) {
+            if (tournament != null) {
+                tournament.rounds.findById(req.params.roundid).require(app, models);
+                return res.send(page);
+            } else {
+                console.log("Cannot find any tournament with id: " + req.params.id);
+                return res.send("Cannot find any tournament with id: " + req.params.id, null, 404);
+            }
+        });
+    });
+
+    app.get('/api/tournament/:id/currentRound', function(req, res) {
+        
+        return models.tournament.findById(req.params.id, function (err, tournament) {
+            if (tournament != null) {
+                return res.send(tournament.rounds[tournament.rounds.length - 1]);
+            } else {
+                console.log("Cannot find any tournament with id: " + req.params.id);
+                return res.send("Cannot find any tournament with id: " + req.params.id, null, 404);
+            }
+        });
+    });
+
+    // Don't forgets:
+
+    //a new round can be started if there are at least so many players with less matches 
+    //that a full round can be drawn
 };

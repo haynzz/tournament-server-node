@@ -11,7 +11,8 @@
         "mongodb":">= 0.9.6-7",
         "mongoose":"~= 2.7.0",
         "mongoose-query-paginate":">= 0.0.1",
-        "everyauth":">=0.2.32"
+        "everyauth":">=0.2.32",
+        "express-namespace":">=0.0.1"
     },
     "engines":{
         "node":">= 0.6.14",

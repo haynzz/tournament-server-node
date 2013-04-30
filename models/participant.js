@@ -45,7 +45,7 @@ module.exports = function (mongoose) {
     });
 
     Participant.methods.equals = function(otherParticipant){
-        console.log("Participant.equals");
+        console.log("Participant.equals - " + this.id + " vs " + otherParticipant.id +": " + (this.id == otherParticipant.id));
         return (this.id == otherParticipant.id);
     }
 
